@@ -104,9 +104,9 @@ def create_features(outfile, nfolds=5, random_state=1):
 #print "validating"
 #validate_model(train_features, train_labels)
 
-#for i in xrange(10):
-#  probs, train_probs = create_features(outfile+"_"+str(i)+".csv", random_state = int(time.time()+i))
- # np.savez(outfile+"_feature"+str(i), train=train_probs, test = probs)
+for i in xrange(10):
+  probs, train_probs = create_features(outfile+"_"+str(i)+".csv", random_state = int(time.time()+i))
+  np.savez(outfile+"_feature"+str(i), train=train_probs, test = probs)
 
-for i in xrange(50):
-    train_and_save_folds(outfile+"_sub"+str(i), random_state = int(time.time()+2*i))
+#for i in xrange(50):
+#    train_and_save_folds(outfile+"_sub"+str(i), random_state = int(time.time()+2*i))

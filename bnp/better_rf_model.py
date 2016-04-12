@@ -10,6 +10,6 @@ model = RandomForestClassifier(n_estimators=1000, criterion= "entropy",n_jobs=-1
 for i in xrange(5):
     probs, tprobs = cross_val_model(model, train_features, train_labels, test_features)
     np.savez(outfile+"_feature"+str(i), train=tprobs, test=probs)
-save_submission(outfile, ids=ids, probs=probs)
-print "saved model, validating now"
-print cross_val_score(model, train_features, train_labels, scoring= "log_loss")
+#save_submission(outfile, ids=ids, probs=probs)
+#print "saved model, validating now"
+#print cross_val_score(model, train_features, train_labels, scoring= "log_loss")
