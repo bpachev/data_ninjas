@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from time import time
 from sklearn.metrics import log_loss, mean_absolute_error
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.cross_validation import KFold
 
 def cross_val_model(model, train_features, labels, test_features, nfolds = 5, nbags = 1):
     """
@@ -19,13 +19,15 @@ def cross_val_model(model, train_features, labels, test_features, nfolds = 5, nb
     trainy = np.zeros(len(train_features))
     for bag in xrange(nbags):
         i=0
-        skf = StratifiedKFold(labels, n_folds=nfolds, random_state=int(time()))
+        skf = KFold(len(labels), n_folds=nfolds, shuffle=True, random_state=int(time()))
+        temp_trainy = np.zeros(len(train_features))
         for train_mask, test_mask in skf:
             i+=1
             model.fit(train_features[train_mask], labels[train_mask])
-            y += model.predict(test_features)[:,1]
-            trainy[test_mask] = model.predict(train_features[test_mask])[:,1]
-            print "Finished cross val fold %d with validation error %f, bag %d" % (i, mean_absolute_error(trainy[labels_test], mask[test_mask] ), d)
+            y += model.predict(test_features)
+            temp_trainy[test_mask] = model.predict(train_features[test_mask])
+            print "Finished cross val fold %d with validation error %f, bag %d" % (i, mean_absolute_error(temp_trainy[test_mask], labels[test_mask]), bag)
+        trainy += temp_trainy
     y /= (nbags*nfolds)
     trainy /= nbags
     return y, trainy
@@ -63,5 +65,23 @@ def read_dataset(dataset):
     feature_names = arch['feature_names'] 
     return train_features, train_labels, test_features, ids, feature_names
 
+def combine_datasets(file_list):
+    trainf_list = []
+    testf_list = []
+    trainl = None
+    test_ids = None
+    feature_name_list = []
+    for f in args.dataset_files:
+        trainf, trainl, testf, test_ids, feature_names = utils.read_dataset(f)
+        trainf_list.append(trainf)
+        testf_list.append(testf)
+        feature_name_list.append(feature_names)
+    
+    trainf = np.hstack(trainf_list)
+    testf = np.hstack(testf_list)
+    feature_names = np.hstack(feature_name_list)
+    return trainf, trainl, testf, test_ids, feature_names
+
 def save_submission(filename, ids=None, loss=None):
     pd.DataFrame({"id":ids, "loss":loss}).to_csv(filename, index=False)
+    
