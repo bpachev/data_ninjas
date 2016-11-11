@@ -71,8 +71,8 @@ def combine_datasets(file_list):
     trainl = None
     test_ids = None
     feature_name_list = []
-    for f in args.dataset_files:
-        trainf, trainl, testf, test_ids, feature_names = utils.read_dataset(f)
+    for f in file_list:
+        trainf, trainl, testf, test_ids, feature_names = read_dataset(f)
         trainf_list.append(trainf)
         testf_list.append(testf)
         feature_name_list.append(feature_names)

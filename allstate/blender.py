@@ -2,6 +2,13 @@ import argparse
 import utils
 import numpy as np
 from sys import exit
+import xgboost as xgb
+from sklearn.metrics import mean_absolute_error
+
+def evalerror(preds, dtrain):
+    labels = dtrain.get_label()
+    return 'mae', mean_absolute_error(np.exp(preds), np.exp(labels))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Combine multiple datasets to make one submission or a new feature")
@@ -21,4 +28,34 @@ if __name__ == "__main__":
     
        
     trainf, trainl, testf, test_ids, feature_names = utils.combine_datasets(args.dataset_files)
+    
+
+    shift = 200
+    y = np.log(trainl + shift)
+    ids = test_ids
+    
+    RANDOM_STATE = 2016
+    params = {
+        'min_child_weight': 1,
+        'eta': 0.01,
+        'colsample_bytree': 0.5,
+        'max_depth': 12,
+        'subsample': 0.8,
+        'alpha': 1,
+        'gamma': 1,
+        'silent': 1,
+        'verbose_eval': True,
+        'seed': RANDOM_STATE
+    }
+
+    xgtrain = xgb.DMatrix(trainf, label=y)
+    xgtest = xgb.DMatrix(testf)
+
+    num_rounds = 2012
+    res = xgb.cv(params, xgtrain, num_boost_round=num_rounds, nfold=5, stratified=False,
+         early_stopping_rounds=50, verbose_eval=1, show_stdv=True, feval=evalerror, maximize=False)
+    model = xgb.train(params, xgtrain, int(2012 / 0.9), feval=evalerror)
+    prediction = np.exp(model.predict(xgtest)) - shift
+
+    utils.save_submission(args.outfile, ids=ids, loss=prediction)
     
