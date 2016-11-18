@@ -54,8 +54,8 @@ def batch_generatorp(X, batch_size, shuffle):
 ########################################################################################################################################################
 
 ## read data
-train = pd.read_csv('input/train.csv')
-test = pd.read_csv('input/test.csv')
+train = pd.read_csv('data/train.csv')
+test = pd.read_csv('data/test.csv')
 
 index = list(train.index)
 print index[0:10]
@@ -126,15 +126,18 @@ def nn_model():
     return(model)
 
 ## cv-folds
-nfolds = 10
+nfolds = 7
 folds = KFold(len(y), n_folds = nfolds, shuffle = True, random_state = 111)
 
 ## train models
 i = 0
-nbags = 10
+nbags = 7
 nepochs = 55
 pred_oob = np.zeros(xtrain.shape[0])
 pred_test = np.zeros(xtest.shape[0])
+
+#from keras.callbacks import EarlyStopping
+#early_stopping = EarlyStopping(monitor='val_loss', patience=3)
 
 for (inTr, inTe) in folds:
     xtr = xtrain[inTr]
@@ -147,7 +150,9 @@ for (inTr, inTe) in folds:
         fit = model.fit_generator(generator = batch_generator(xtr, ytr, 128, True),
                                   nb_epoch = nepochs,
                                   samples_per_epoch = xtr.shape[0],
-                                  verbose = 0)
+      #                            validation_data = (xte, yte),
+      #                            callbacks = [early_stopping],
+                                  verbose = 1)
         pred += np.exp(model.predict_generator(generator = batch_generatorp(xte, 800, False), val_samples = xte.shape[0])[:,0])-200
         pred_test += np.exp(model.predict_generator(generator = batch_generatorp(xtest, 800, False), val_samples = xtest.shape[0])[:,0])-200
     pred /= nbags

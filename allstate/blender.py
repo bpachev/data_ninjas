@@ -48,14 +48,20 @@ if __name__ == "__main__":
         'seed': RANDOM_STATE
     }
 
-    xgtrain = xgb.DMatrix(trainf, label=y)
-    xgtest = xgb.DMatrix(testf)
+#    xgtrain = xgb.DMatrix(trainf, label=y)
+#    xgtest = xgb.DMatrix(testf)
 
-    num_rounds = 2012
-    res = xgb.cv(params, xgtrain, num_boost_round=num_rounds, nfold=5, stratified=False,
-         early_stopping_rounds=50, verbose_eval=1, show_stdv=True, feval=evalerror, maximize=False)
-    model = xgb.train(params, xgtrain, int(2012 / 0.9), feval=evalerror)
-    prediction = np.exp(model.predict(xgtest)) - shift
-
-    utils.save_submission(args.outfile, ids=ids, loss=prediction)
+#    res = xgb.cv(params, xgtrain, num_boost_round=num_rounds, nfold=5, stratified=False,
+#         early_stopping_rounds=50, verbose_eval=1, show_stdv=True, feval=evalerror, maximize=False)
+    params["num_rounds"] = int(2012 / 0.9)
+    params["feval"] = evalerror
+    pred, trainpred = utils.cv_xgboost(params, trainf, y, testf)
+    pred = np.exp(pred) - shift
+    train_pred = np.exp(trainpred) - shift
+    utils.save_submission("data/xgb_cved.csv", ids=ids, loss=pred)
+    if is_submission: utils.save_submission(args.outfile, ids=ids, loss=pred)
+    else:
+        pred = pred.reshape((len(pred),1))
+        train_pred = train_pred.reshape((len(train_pred),1))
+        save_dataset(args.outfile, train_features=train_pred, train_labels=trainl, test_features=pred, ids=ids, feature_names=['xgb'])
     

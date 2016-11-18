@@ -4,6 +4,7 @@ import pandas as pd
 from time import time
 from sklearn.metrics import log_loss, mean_absolute_error
 from sklearn.cross_validation import KFold
+import xgboost as xgb
 
 def cross_val_model(model, train_features, labels, test_features, nfolds = 5, nbags = 1):
     """
@@ -32,6 +33,48 @@ def cross_val_model(model, train_features, labels, test_features, nfolds = 5, nb
     trainy /= nbags
     return y, trainy
 
+def xgb_train(xgmat, params, validation=None, random_state = 0, early_stopping_rounds=30):
+# xgmat = xgb.DMatrix(features, label=labels)
+ wlist = [(xgmat, 'train')]
+ if validation is not None:
+     wlist.append((validation, 'validation'))
+ params["seed"] = random_state
+ if "feval" in params: bst = xgb.train(params, xgmat, params["num_rounds"], wlist, early_stopping_rounds = early_stopping_rounds, feval=params["feval"])
+ else: bst = xgb.train(params, xgmat, params["num_rounds"], wlist, early_stopping_rounds = early_stopping_rounds)
+ return bst
+
+def cv_xgboost(params, train_features, labels, test_features, nfolds=5, nbags=1):
+    """
+    model -- the model to train
+    train_features -- the training features
+    labels -- the variable to predict
+    test_features -- the testing features
+    nfolds -- number of cross-val folds to use
+    nbags -- the number of times to randomly repeat and average the result
+    NOTE: this is for regression problems with mean average error loss
+    """
+    y = np.zeros(len(test_features))
+    trainy = np.zeros(len(train_features))
+    test_mat = xgb.DMatrix(test_features)
+    for bag in xrange(nbags):
+        i=0
+        skf = KFold(len(labels), n_folds=nfolds, shuffle=True, random_state=int(time()))
+        temp_trainy = np.zeros(len(train_features))
+        for train_mask, test_mask in skf:
+            i+=1
+            val_mat = xgb.DMatrix(train_features[test_mask], labels[test_mask])
+            train_mat = xgb.DMatrix(train_features[train_mask], labels[train_mask])
+#            model.train(params, train_features[train_mask], labels[train_mask], random_state=int(time()))
+            model=xgb_train(train_mat, params, validation=val_mat)
+            y += model.predict(test_mat)
+            temp_trainy[test_mask] = model.predict(val_mat)
+            print "Finished cross val fold %d with validation error %f, bag %d" % (i, mean_absolute_error(temp_trainy[test_mask], labels[test_mask]), bag)
+        trainy += temp_trainy
+    y /= (nbags*nfolds)
+    trainy /= nbags
+    return y, trainy
+
+
 def extract_mat(df, cat, cont):
     """
     Create a numpy matrix consisting a subset of the columns of a pandas dataframe
@@ -46,7 +89,7 @@ def extract_mat(df, cat, cont):
     return np.vstack(arrs).T    
 
 
-def save_dataset(filename, train_labels, train_features, test_features, ids, feature_names):
+def save_dataset(filename, train_labels=None, train_features=None, test_features=None, ids=None, feature_names=None):
     """
     ids  are the ids for the test dataset
     filename is the npz datafile to write to
