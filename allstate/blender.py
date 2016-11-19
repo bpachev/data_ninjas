@@ -24,9 +24,8 @@ if __name__ == "__main__":
     elif args.output_type == "submission":
         is_submission = True
     else:
-        raise ValueError("Must specifiy output type to be submission or dataset.")
+        raise ValueError("Must specify output type to be submission or dataset.")
     
-       
     trainf, trainl, testf, test_ids, feature_names = utils.combine_datasets(args.dataset_files)
     
 
@@ -53,12 +52,12 @@ if __name__ == "__main__":
 
 #    res = xgb.cv(params, xgtrain, num_boost_round=num_rounds, nfold=5, stratified=False,
 #         early_stopping_rounds=50, verbose_eval=1, show_stdv=True, feval=evalerror, maximize=False)
-    params["num_rounds"] = int(2012 / 0.9)
+    params["num_rounds"] = int(2 / 0.9)
     params["feval"] = evalerror
     pred, trainpred = utils.cv_xgboost(params, trainf, y, testf)
     pred = np.exp(pred) - shift
     train_pred = np.exp(trainpred) - shift
-    utils.save_submission("data/xgb_cved.csv", ids=ids, loss=pred)
+    utils.save_submission("data/blended1.csv", ids=ids, loss=pred)
     if is_submission: utils.save_submission(args.outfile, ids=ids, loss=pred)
     else:
         pred = pred.reshape((len(pred),1))
