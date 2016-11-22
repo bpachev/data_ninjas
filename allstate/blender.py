@@ -52,9 +52,9 @@ if __name__ == "__main__":
 
 #    res = xgb.cv(params, xgtrain, num_boost_round=num_rounds, nfold=5, stratified=False,
 #         early_stopping_rounds=50, verbose_eval=1, show_stdv=True, feval=evalerror, maximize=False)
-    params["num_rounds"] = int(2 / 0.9)
+    params["num_rounds"] = int(4000 / 0.9)
     params["feval"] = evalerror
-    pred, trainpred = utils.cv_xgboost(params, trainf, y, testf)
+    pred, trainpred = utils.cv_xgboost(params, trainf, y, testf, nbags=10)
     pred = np.exp(pred) - shift
     train_pred = np.exp(trainpred) - shift
     utils.save_submission("data/blended1.csv", ids=ids, loss=pred)

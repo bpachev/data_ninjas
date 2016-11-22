@@ -69,6 +69,8 @@ def cv_xgboost(params, train_features, labels, test_features, nfolds=5, nbags=1)
             y += model.predict(test_mat)
             temp_trainy[test_mask] = model.predict(val_mat)
             print "Finished cross val fold %d with validation error %f, bag %d" % (i, mean_absolute_error(temp_trainy[test_mask], labels[test_mask]), bag)
+            del val_mat
+            del train_mat
         trainy += temp_trainy
     y /= (nbags*nfolds)
     trainy /= nbags

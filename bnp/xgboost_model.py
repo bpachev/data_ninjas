@@ -32,7 +32,7 @@ def xgb_params():
     return params
 #    params[]
 num_rounds = 50
-def train_model(features, labels, validation=None, random_state = 0, early_stopping_rounds=7):
+def train_model(features, labels, validation=None, random_state = 0, early_stopping_rounds=50):
  xgmat = xgb.DMatrix(features, label=labels)
  #create params
  params = xgb_params()
